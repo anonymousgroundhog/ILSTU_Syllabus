@@ -50,7 +50,6 @@ Upon successful completion, students will be able to:
 * **Computer:** Must meet the School of IT requirements.
 * **Network:** Reliable, fast network is required when off-campus.
 * **HackTheBox:** VIP+ subscription ($25/month) is required for labs and textbook materials.
-* **Minecraft Java Edition:** Used for educational purposes and group work (roughly $30).
 
 ### Course Format
 
