@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About — Sky World</title>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #37414c; }
+  #app { width: 100%; height: 100%; display: block; }
+  #hud {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    color: rgba(255,255,255,0.92); font: 14px/1.5 system-ui, sans-serif;
+    background: rgba(20,35,60,0.45); padding: 10px 18px; border-radius: 10px;
+    backdrop-filter: blur(6px); text-align: center; pointer-events: none;
+    transition: opacity 0.6s;
+  }
+  #hud.hidden { opacity: 0; }
+  #err {
+    position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+    color: #fff; background: rgba(160,30,30,0.85); padding: 8px 14px;
+    border-radius: 8px; font: 13px system-ui, sans-serif; display: none;
+  }
+</style>
+</head>
+<body>
+<canvas id="app"></canvas>
+<div id="hud">Click to look around &nbsp;·&nbsp; <b>W A S D</b> move &nbsp;·&nbsp; <b>Q / E</b> or <b>Space / Shift</b> up &amp; down &nbsp;·&nbsp; <b>Esc</b> release mouse</div>
+<div id="err"></div>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+const MD_FILE = 'About.md';
+const POLL_MS = 2000;
+
+// ---------- renderer / scene ----------
+const canvas = document.getElementById('app');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x5c6a77, 55, 380);
+
+const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 2000);
+camera.position.set(0, 0, 26);
+
+// ---------- sky dome (gradient shader) ----------
+const skyGeo = new THREE.SphereGeometry(900, 32, 24);
+const skyMat = new THREE.ShaderMaterial({
+  side: THREE.BackSide,
+  depthWrite: false,
+  uniforms: {
+    topColor:    { value: new THREE.Color(0x1c2733) },
+    midColor:    { value: new THREE.Color(0x4d5d6c) },
+    bottomColor: { value: new THREE.Color(0xaebccb) },
+  },
+  vertexShader: `
+    varying vec3 vWorld;
+    void main() {
+      vWorld = (modelMatrix * vec4(position, 1.0)).xyz;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }`,
+  fragmentShader: `
+    uniform vec3 topColor; uniform vec3 midColor; uniform vec3 bottomColor;
+    varying vec3 vWorld;
+    void main() {
+      float h = normalize(vWorld).y;
+      vec3 c = h > 0.0
+        ? mix(midColor, topColor, pow(h, 0.6))
+        : mix(midColor, bottomColor, pow(-h, 0.5));
+      gl_FragColor = vec4(c, 1.0);
+    }`
+});
+scene.add(new THREE.Mesh(skyGeo, skyMat));
+
+// ---------- lights ----------
+const sun = new THREE.DirectionalLight(0xdfe8f2, 1.6);
+sun.position.set(-120, 180, 90);
+scene.add(sun);
+scene.add(new THREE.HemisphereLight(0x8fa3b5, 0x39434d, 0.85));
+const rim = new THREE.DirectionalLight(0xaFC2d8, 0.7);   // cold rim light from behind
+rim.position.set(80, 40, -160);
+scene.add(rim);
+
+// sun glow sprite
+function glowTexture(inner, outer) {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+  grad.addColorStop(0, inner); grad.addColorStop(1, outer);
+  g.fillStyle = grad; g.fillRect(0, 0, 256, 256);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+  map: glowTexture('rgba(235,242,250,0.9)', 'rgba(200,215,230,0)'),
+  transparent: true, depthWrite: false, fog: false,
+}));
+sunSprite.scale.setScalar(320);
+sunSprite.position.copy(sun.position).normalize().multiplyScalar(800);
+scene.add(sunSprite);
+
+// ---------- environment reflections for the cube ----------
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(scene, 0.04).texture;
+
+// ---------- clouds ----------
+function cloudTexture(dark) {
+  const size = 256;
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const g = c.getContext('2d');
+  g.clearRect(0, 0, size, size);
+  const tone = dark ? [150, 160, 172] : [222, 228, 235];
+  for (let i = 0; i < 26; i++) {
+    const x = size / 2 + (Math.random() - 0.5) * size * 0.55;
+    const y = size / 2 + (Math.random() - 0.5) * size * 0.3;
+    const r = 22 + Math.random() * 42;
+    const grad = g.createRadialGradient(x, y, 0, x, y, r);
+    grad.addColorStop(0, `rgba(${tone[0]},${tone[1]},${tone[2]},0.5)`);
+    grad.addColorStop(1, `rgba(${tone[0]},${tone[1]},${tone[2]},0)`);
+    g.fillStyle = grad;
+    g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+  }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+const cloudGroup = new THREE.Group();
+scene.add(cloudGroup);
+const cloudTexes = [cloudTexture(false), cloudTexture(false), cloudTexture(true), cloudTexture(true)];
+const clouds = [];
+for (let i = 0; i < 240; i++) {
+  const belowDeck = i < 150;
+  const mat = new THREE.SpriteMaterial({
+    map: belowDeck ? cloudTexes[i % 2] : cloudTexes[2 + (i % 2)],   // bright sea below, grey wisps above
+    transparent: true, depthWrite: false,
+    opacity: 0.45 + Math.random() * 0.4,
+  });
+  const s = new THREE.Sprite(mat);
+  s.position.set(
+    (Math.random() - 0.5) * 700,
+    belowDeck ? -18 - Math.random() * 40 : (Math.random() - 0.5) * 160,
+    (Math.random() - 0.5) * 900 - 150
+  );
+  const sc = 28 + Math.random() * 80;
+  s.scale.set(sc * (1.4 + Math.random()), sc, 1);
+  s.userData.drift = 0.4 + Math.random() * 0.9;
+  clouds.push(s);
+  cloudGroup.add(s);
+}
+
+// ---------- procedural rock texture (dark weathered stone) ----------
+function rockMaps() {
+  const S = 512;
+  const c = document.createElement('canvas'); c.width = c.height = S;
+  const g = c.getContext('2d');
+  g.fillStyle = '#3a3e44';
+  g.fillRect(0, 0, S, S);
+  // large mottled patches
+  for (let i = 0; i < 140; i++) {
+    const x = Math.random() * S, y = Math.random() * S, r = 20 + Math.random() * 90;
+    const v = 40 + Math.random() * 45;
+    const grad = g.createRadialGradient(x, y, 0, x, y, r);
+    grad.addColorStop(0, `rgba(${v},${v + 3},${v + 8},${0.12 + Math.random() * 0.18})`);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = grad;
+    g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+  }
+  // fine grain speckle
+  for (let i = 0; i < 14000; i++) {
+    const v = 25 + Math.random() * 75;
+    g.fillStyle = `rgba(${v},${v + 2},${v + 6},${0.15 + Math.random() * 0.3})`;
+    g.fillRect(Math.random() * S, Math.random() * S, 1 + Math.random() * 2, 1 + Math.random() * 2);
+  }
+  // cracks: dark jagged polylines
+  g.strokeStyle = 'rgba(14,15,18,0.55)';
+  for (let i = 0; i < 14; i++) {
+    g.lineWidth = 0.6 + Math.random() * 1.6;
+    let x = Math.random() * S, y = Math.random() * S;
+    g.beginPath(); g.moveTo(x, y);
+    for (let s = 0; s < 8 + Math.random() * 10; s++) {
+      x += (Math.random() - 0.5) * 70; y += (Math.random() - 0.5) * 70;
+      g.lineTo(x, y);
+    }
+    g.stroke();
+  }
+  const map = new THREE.CanvasTexture(c);
+  map.colorSpace = THREE.SRGBColorSpace;
+  map.wrapS = map.wrapT = THREE.RepeatWrapping;
+  const bump = new THREE.CanvasTexture(c);   // same pattern drives relief
+  bump.wrapS = bump.wrapT = THREE.RepeatWrapping;
+  return { map, bump };
+}
+
+const { map: rockMap, bump: rockBump } = rockMaps();
+const rockMaterial = new THREE.MeshStandardMaterial({
+  map: rockMap, bumpMap: rockBump, bumpScale: 3.0,
+  color: 0xb9bec6, roughness: 0.92, metalness: 0.04, envMapIntensity: 0.35,
+});
+
+// ---------- the hero cube ----------
+const cube = new THREE.Mesh(new THREE.BoxGeometry(6, 6, 6), rockMaterial);
+cube.rotation.set(0.5, 0.7, 0.15);
+cube.position.set(0, 0, 0);
+scene.add(cube);
+
+// ---------- background cubes drifting at odd angles ----------
+const bgCubes = [];
+for (let i = 0; i < 12; i++) {
+  const size = 3 + Math.random() * 9;
+  const m = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), rockMaterial);
+  const angle = Math.random() * Math.PI * 2;
+  const dist = 45 + Math.random() * 200;
+  m.position.set(
+    Math.cos(angle) * dist,
+    (Math.random() - 0.5) * 90,
+    -60 - Math.random() * 320
+  );
+  m.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+  m.userData.spin = new THREE.Vector3(
+    (Math.random() - 0.5) * 0.1,
+    (Math.random() - 0.5) * 0.1,
+    (Math.random() - 0.5) * 0.1
+  );
+  m.userData.bobPhase = Math.random() * Math.PI * 2;
+  m.userData.baseY = m.position.y;
+  bgCubes.push(m);
+  scene.add(m);
+}
+
+// ---------- markdown → floating panels ----------
+const panelGroup = new THREE.Group();
+scene.add(panelGroup);
+
+// tiny markdown-ish parser: keep headings, bullets, hr, plain lines
+function parseMd(text) {
+  const sections = [];
+  let cur = null;
+  for (const raw of text.split('\n')) {
+    const line = raw.replace(/\r$/, '');
+    const h = line.match(/^(#{1,4})\s+(.*)/);
+    if (h) {
+      if (h[1].length <= 2) {           // ## starts a new panel
+        cur = { title: h[2].trim(), lines: [] };
+        sections.push(cur);
+        continue;
+      }
+      if (!cur) { cur = { title: h[2].trim(), lines: [] }; sections.push(cur); continue; }
+      if (h[1].length === 3) {          // ### starts a new panel too
+        cur = { title: h[2].trim(), lines: [] };
+        sections.push(cur);
+        continue;
+      }
+      cur.lines.push({ kind: 'sub', text: h[2].trim() });
+      continue;
+    }
+    if (/^-{3,}\s*$/.test(line)) continue;   // hr — panels already split
+    if (!cur) continue;
+    const bullet = line.match(/^(\s*)[*-]\s+(.*)/);
+    if (bullet) {
+      cur.lines.push({ kind: 'bullet', depth: Math.floor(bullet[1].length / 2), text: bullet[2] });
+    } else if (line.trim()) {
+      cur.lines.push({ kind: 'text', text: line.trim() });
+    }
+  }
+  return sections;
+}
+
+// draw inline **bold** / *italic* markdown on a canvas context
+function drawInline(g, text, x, y, maxWidth, baseFont, lineHeight) {
+  const tokens = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/).filter(Boolean);
+  let cx = x, cy = y;
+  for (const tok of tokens) {
+    let style = '', t = tok;
+    if (/^\*\*.*\*\*$/.test(tok)) { style = '600 '; t = tok.slice(2, -2); }
+    else if (/^\*.*\*$/.test(tok)) { style = 'italic '; t = tok.slice(1, -1); }
+    g.font = style + baseFont;
+    for (const word of t.split(/(\s+)/)) {
+      const w = g.measureText(word).width;
+      if (cx + w > x + maxWidth && word.trim()) { cx = x; cy += lineHeight; }
+      g.fillText(word, cx, cy);
+      cx += w;
+    }
+  }
+  return cy;
+}
+
+function panelTexture(section) {
+  const W = 1024, PAD = 56;
+  // measure pass ~ estimate height
+  const est = document.createElement('canvas').getContext('2d');
+  let h = 190;
+  for (const l of section.lines) {
+    est.font = '34px system-ui';
+    const len = est.measureText(l.text.replace(/\*/g, '')).width;
+    h += Math.max(1, Math.ceil(len / (W - PAD * 2 - 60))) * 52 + 12;
+  }
+  const H = Math.max(360, Math.min(2048, h));
+
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const g = c.getContext('2d');
+
+  // frosted-glass card
+  const bg = g.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, 'rgba(18, 34, 58, 0.82)');
+  bg.addColorStop(1, 'rgba(10, 22, 40, 0.88)');
+  g.fillStyle = bg;
+  const r = 36;
+  g.beginPath();
+  g.roundRect(4, 4, W - 8, H - 8, r);
+  g.fill();
+  g.strokeStyle = 'rgba(255,255,255,0.35)';
+  g.lineWidth = 3;
+  g.stroke();
+
+  // title
+  g.fillStyle = '#ffffff';
+  g.font = '600 56px system-ui';
+  g.fillText(section.title, PAD, PAD + 56);
+  g.strokeStyle = 'rgba(140,190,255,0.7)';
+  g.lineWidth = 4;
+  g.beginPath(); g.moveTo(PAD, PAD + 86); g.lineTo(W - PAD, PAD + 86); g.stroke();
+
+  // body
+  let y = PAD + 150;
+  const lh = 50;
+  for (const l of section.lines) {
+    if (y > H - 40) break;
+    if (l.kind === 'sub') {
+      g.fillStyle = '#cfe3ff';
+      g.font = '600 40px system-ui';
+      g.fillText(l.text, PAD, y);
+      y += lh + 8;
+    } else if (l.kind === 'bullet') {
+      const indent = PAD + 30 + (l.depth || 0) * 44;
+      g.fillStyle = '#9cc4f2';
+      g.beginPath(); g.arc(indent - 20, y - 11, 5.5, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#eef4fb';
+      y = drawInline(g, l.text, indent, y, W - PAD - indent, '34px system-ui', 44) + lh;
+    } else {
+      g.fillStyle = '#dbe7f5';
+      y = drawInline(g, l.text, PAD, y, W - PAD * 2, '34px system-ui', 44) + lh;
+    }
+  }
+
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return { texture: t, aspect: H / W };
+}
+
+function buildPanels(mdText) {
+  // dispose old
+  for (const child of [...panelGroup.children]) {
+    child.material.map?.dispose();
+    child.material.dispose();
+    child.geometry.dispose();
+    panelGroup.remove(child);
+  }
+  const sections = parseMd(mdText);
+  const width = 16;
+  let z = -18;                      // first panel just past the hero cube
+  // panels laid out single-file down the flight path, in document order
+  sections.forEach((sec, i) => {
+    const { texture, aspect } = panelTexture(sec);
+    const hgt = width * aspect;
+    const mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(width, hgt),
+      new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide })
+    );
+    const side = i % 2 === 0 ? 1 : -1;          // gentle weave, still one ordered lane
+    mesh.position.set(side * 3.5, 0, z);
+    mesh.rotation.y = side * 0.12;
+    mesh.userData.baseY = 0;
+    mesh.userData.phase = i * 1.7;
+    panelGroup.add(mesh);
+    z -= 16 + hgt * 0.8;                        // finish reading one before next arrives
+  });
+}
+
+// ---------- live reload of About.md ----------
+let lastMd = null;
+const errBox = document.getElementById('err');
+async function refreshMd() {
+  try {
+    const res = await fetch(MD_FILE + '?t=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+    const text = await res.text();
+    errBox.style.display = 'none';
+    if (text !== lastMd) {
+      lastMd = text;
+      buildPanels(text);
+    }
+  } catch (e) {
+    errBox.textContent = 'Cannot load ' + MD_FILE + ' — serve this page over HTTP (python3 -m http.server). ' + e.message;
+    errBox.style.display = 'block';
+  }
+}
+refreshMd();
+setInterval(refreshMd, POLL_MS);
+
+// ---------- controls: pointer-lock fly camera ----------
+let yaw = 0, pitch = 0;
+const keys = new Set();
+const hud = document.getElementById('hud');
+
+canvas.addEventListener('click', () => canvas.requestPointerLock());
+document.addEventListener('pointerlockchange', () => {
+  hud.classList.toggle('hidden', document.pointerLockElement === canvas);
+});
+document.addEventListener('mousemove', (e) => {
+  if (document.pointerLockElement !== canvas) return;
+  yaw -= e.movementX * 0.0022;
+  pitch -= e.movementY * 0.0022;
+  pitch = Math.max(-1.45, Math.min(1.45, pitch));
+});
+window.addEventListener('keydown', (e) => keys.add(e.code));
+window.addEventListener('keyup', (e) => keys.delete(e.code));
+window.addEventListener('blur', () => keys.clear());
+
+const velocity = new THREE.Vector3();
+function updateCamera(dt) {
+  const speed = keys.has('ControlLeft') ? 30 : 12;
+  const fwd = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+  const right = new THREE.Vector3(fwd.z, 0, -fwd.x);
+  const wish = new THREE.Vector3();
+  if (keys.has('KeyW') || keys.has('ArrowUp')) wish.add(fwd);
+  if (keys.has('KeyS') || keys.has('ArrowDown')) wish.sub(fwd);
+  if (keys.has('KeyD') || keys.has('ArrowRight')) wish.add(right);
+  if (keys.has('KeyA') || keys.has('ArrowLeft')) wish.sub(right);
+  if (keys.has('KeyE') || keys.has('Space')) wish.y += 1;
+  if (keys.has('KeyQ') || keys.has('ShiftLeft')) wish.y -= 1;
+  if (wish.lengthSq() > 0) wish.normalize().multiplyScalar(speed);
+  velocity.lerp(wish, 1 - Math.pow(0.0001, dt));   // smooth accel/decel
+  camera.position.addScaledVector(velocity, dt);
+  camera.quaternion.setFromEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'));
+}
+
+// ---------- resize ----------
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ---------- animate ----------
+const clock = new THREE.Clock();
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const t = clock.elapsedTime;
+
+  updateCamera(dt);
+
+  cube.rotation.y += dt * 0.12;
+  cube.rotation.x += dt * 0.05;
+  cube.position.y = Math.sin(t * 0.6) * 0.8;
+
+  for (const m of bgCubes) {
+    m.rotation.x += m.userData.spin.x * dt;
+    m.rotation.y += m.userData.spin.y * dt;
+    m.rotation.z += m.userData.spin.z * dt;
+    m.position.y = m.userData.baseY + Math.sin(t * 0.3 + m.userData.bobPhase) * 1.5;
+  }
+
+  for (const s of clouds) {
+    s.position.x += s.userData.drift * dt;
+    if (s.position.x > 380) s.position.x = -380;
+  }
+  for (const p of panelGroup.children) {
+    p.position.y = p.userData.baseY + Math.sin(t * 0.5 + p.userData.phase) * 0.35;
+  }
+
+  renderer.render(scene, camera);
+}
+animate();
+</script>
+</body>
+</html>
