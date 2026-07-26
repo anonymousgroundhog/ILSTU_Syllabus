@@ -1,6 +1,6 @@
 # IT 359: Tools and Techniques in Penetration Testing
 
-**Updated:** 2/25/2026
+**Updated:** 7/26/2026
 
 ## Instructor Information
 
@@ -8,9 +8,9 @@
 
 * **Email:** <spsand1@ilstu.edu>
 
-* **Room:** Old Union 213E
+* **Room:** Jullian Hall 30
 
-* **Time:** (Tu/Thur) 9:35 PM - 10:50 PM
+* **Time:** (Tu/Thur) 5 PM - 6:15 PM
 
 * **Student Support Hours:** By appointment
 
