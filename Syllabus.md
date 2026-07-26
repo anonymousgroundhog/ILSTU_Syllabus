@@ -1,6 +1,6 @@
 ## IT 360 - Security Incident and Event Management and Forensics
 
-**Updated as of:** 2/25/2026
+**Updated as of:** 7/26/2026
 
 **Instructor:** Dr. Sean Sanders
 
@@ -8,9 +8,9 @@
 
 **Student Support Hours:** By appointment; requests on Monday, Wednesday, or Friday from 9 AM to 5 PM
 
-**Time:** Tu/Thur at 12:35 p.m.–1:50 p.m. and 2 p.m.–3:15 p.m.
+**Time:** Tu/Thur at 9:35 a.m.–10:50 a.m. and 11 a.m.–12:15 p.m.
 
-**Room:** Julian Hall 26
+**Room:** Julian Hall 30
 
 ---
 
