@@ -45,6 +45,10 @@ Upon successful completion, students will be able to:
 
 ## Course Requirements
 
+### Generative AI use in this course is welcome with proper attribution
+
+In this course, students can use generative AI tools (such as ChatGPT or Adobe Firefly) to complete assigned work, so long as the use of generative AI tools is properly disclosed through in-text citations, quotations, and references.
+
 ### Technology & Software
 
 * **Computer:** Must meet the School of IT requirements.
