@@ -8,7 +8,7 @@ This final project requires you to develop a tool or script that addresses a spe
 
 Submission Guidelines
 
-* Your entire project will be submitted as a single link to a private GitHub repository.
+* Your entire project will be submitted as a single link to a public GitHub repository.
 * You must add your instructor as a collaborator to the repository before the deadline.
 * No other submission methods will be accepted.
 * The repository must contain three core components: the programming project, a detailed written report, and a video presentation.
