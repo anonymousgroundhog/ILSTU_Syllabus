@@ -114,6 +114,6 @@ Assignments must be submitted via **Canvas**. Late submissions or submissions vi
 | **1-2** | Intro to Ethical Hacking; Footprinting; Nmap | Tier 0 & Tier 1 | Tier 0 & 1 due; Project idea due Week 2  |
 | **3** | Enumeration (FTP, SMB, etc.); Privilege Escalation | Tier 2 | Tier 2 due; Brute forcing; Exploit binary paths  |
 | **4-8** | Red Team Introduction | Intro to Red Team Track | Attack Frameworks; OSINT; Reconnaissance |
-| **9** | Mid Term Review & Exam | N/A | <br>**Mid Term Exam (Mar. 8)**  |
+| **9** | Midterm Review & Exam | N/A | <br>**Midterm Exam**  |
 | **10-16** | Spring Break / Attack Frameworks | MITRE ATT&CK/ATLAS | Framework analysis  |
 | **17** | Student Presentations | N/A | <br>**Final Exam**  |
