@@ -7,6 +7,8 @@
 * **Instructor:** Dr. Sean Sanders
 
 * **Email:** <spsand1@ilstu.edu>
+  
+* **Office:** OU 203a
 
 * **Room:** Jullian Hall 30
 
