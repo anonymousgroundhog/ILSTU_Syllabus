@@ -1,6 +1,6 @@
 ## IT 360 - Security Incident and Event Management and Forensics
 
-**Updated as of:** 7/26/2026
+**Updated as of:** 8/19/2026
 
 **Instructor:** Dr. Sean Sanders
 
@@ -79,6 +79,15 @@ The course consists of **60% lecture/discussion** and **40% lab time**.
 * **3 missed classes:** Letter grade reduction.
 * **4 or more missed classes:** Automatic F for the course.
 * **Excused Absences:** Limited to quarantine, death in the family, or mandatory military/jury duty. Documentation and prior notification are required.
+
+### Other Policies
+
+[Student Access and Accommodation Services](https://studentaccess.illinoisstate.edu/faculty_staff/academic/):
+
+Any student needing to arrange a reasonable accommodation for a documented disability and/or medical/mental
+health condition should contact Student Access and Accommodation Services at 350 Fell Hall, (309) 438-5853,
+or visit the website at [StudentAccess.IllinoisState.edu](https://studentaccess.illinoisstate.edu/).
+Other policy suggestions can be found at the [Center for Integrated Professional Development](https://prodev.illinoisstate.edu/pedagogy/syllabus/#tabs-accord-accordion1|tabs-accord-accordion21).
 
 ---
 
