@@ -6,6 +6,8 @@
 
 **E-mail:** <spsand1@ilstu.edu>
 
+**Office:** OU 203a
+
 **Student Support Hours:** By appointment; requests on Monday, Wednesday, or Friday from 9 AM to 5 PM
 
 **Time:** Tu/Thur at 9:35 a.m.–10:50 a.m. and 11 a.m.–12:15 p.m.
